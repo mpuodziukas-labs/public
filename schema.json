@@ -1,0 +1,26 @@
+{
+  "admission": "a row enters only if GROUNDED(>=2 cites) AND WIRED(load-bearing->guard+selftest) AND REFUTED-SURVIVED AND CLEAN-HANDS(no frontier model saw raw HTML)",
+  "pillars": {
+    "p1": "math & gradient integrity",
+    "p2": "systems & hardware",
+    "p3": "optimization topology",
+    "p4": "gotchas & anomalies"
+  },
+  "row": {
+    "cites": ">=2 chunk sha16 from the crawled corpus",
+    "claim": "atomic statement",
+    "eq_hash": "sha256[:16] of normalized claim",
+    "load_bearing": "bool",
+    "pillar": "p1|p2|p3|p4",
+    "provenance": {
+      "frontier_touched_raw": false,
+      "input": "..."
+    },
+    "refuted": {
+      "attempted": true,
+      "by": "lane",
+      "survived": true
+    },
+    "wire_back": "relative guard path or null"
+  }
+}
