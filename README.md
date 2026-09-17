@@ -1,6 +1,6 @@
 # Backprop Corpus — admission-gated knowledge rows
 
-15 rows across four sealed pillars, each admitted by a single offline oracle with four
+12 rows across four sealed pillars, each admitted by a single offline oracle with four
 preconditions: **grounded** (>=2 source-chunk citations), **wired** (load-bearing rows map to a
 guard with a self-test), **refuted-then-survived** (an adversarial lane tried to break it), and
 **clean-hands** (no frontier model read raw source HTML).
@@ -9,7 +9,7 @@ guard with a self-test), **refuted-then-survived** (an adversarial lane tried to
 |---|---|---|
 | p1 | math & gradient integrity | 2 |
 | p2 | systems & hardware | 7 |
-| p3 | optimization topology | 4 |
+| p3 | optimization topology | 1 |
 | p4 | gotchas & anomalies | 2 |
 
 ## Layout
