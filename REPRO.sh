@@ -82,7 +82,7 @@ if chk.returncode != 0:
     print("REPRO FAIL: %d/%d rows admitted, guard check failed on this tree" % (admitted, candidates))
     sys.exit(1)
 
-print("REPRO PASS: %d/%d rows admitted, %d defects" % (admitted, candidates, bad))
 print("ANCHOR: none-local. SHA256SUMS proves internal consistency only; the release timestamp is the external anchor.")
+print("REPRO PASS: %d/%d rows admitted, %d defects" % (admitted, candidates, bad))
 sys.exit(0)
 PY

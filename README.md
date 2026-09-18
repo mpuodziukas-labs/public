@@ -6,7 +6,7 @@ corpus admits a row only when every claim's cited spans are verbatim in crawled 
 - Deterministic: same input, same verdict, exit code contract.
 - Offline: no network, no dependencies, POSIX sh + bash only, nothing to install.
 - Self-proving: `bash REPRO.sh` re-derives every admission and checks SHA256SUMS; the guard's
-  `--selftest` plants a rejected row and a dead wire-back and must catch both.
+  `--selftest` must catch a planted rejected row and a planted dead wire-back (two negative controls).
 
 ## Quickstart
 
@@ -29,7 +29,7 @@ It does not judge whether a claim is true; it does not do semantic or cross-chun
 Grounding here is verbatim span containment in a crawled chunk, so a correct paraphrase is a
 false negative and is rejected.
 
-This repository is offered as supporting evidence for AI governance controls including model risk management under an SR 11-7 style validation approach, the EU AI Act transparency duty, ISO 42001 AI management system requirements, and the NIST AI RMF measure and manage functions; this repo is one control receipt, not a certification.
+Each governance framework named here is tied to one artifact in this tree, nothing more: model risk management under an SR 11-7 style validation approach maps to independent re-derivation (`REPRO.sh`); the EU AI Act transparency duty maps to the per-row `provenance` field (`schema.json`); ISO 42001 AI management system requirements map to the documented failure classes (`FAILURES.md`); the NIST AI RMF measure and manage functions map to the exit-code contract and the guard selftest. This repo is one control receipt, not a certification, and no auditor has signed it.
 
 Run it on your own corpus and open an issue with the REPRO output if a row re-admits that should not.
 
