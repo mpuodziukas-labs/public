@@ -1,0 +1,25 @@
+name: verify
+
+# The repo renders its own verdict on every change: the guard's selftest asserts its own
+# planted-failure catches, REPRO.sh asserts the literal "12/12 rows admitted" string (not just the
+# exit code), so a silently shrunken corpus fails here without the author present. No
+# network, stdlib only.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: guard selftest (plants a REJECT and a dead wire-back, asserts both are caught)
+        run: bash guards/corpus-admission.sh --selftest
+      - name: reproduce every row and assert the admitted count
+        run: |
+          bash REPRO.sh | tee repro.out
+          grep -qF "12/12 rows admitted" repro.out

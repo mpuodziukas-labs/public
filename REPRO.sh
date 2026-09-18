@@ -1,34 +1,88 @@
 #!/bin/sh
-# REPRO.sh — verify this artifact with nothing but sh + python3. No installs, no network.
+# REPRO.sh - verify this artifact with nothing but sh + python3. No installs, no network.
 set -eu
 cd "$(dirname "$0")"
 python3 - <<'PY'
-import hashlib, json, os, sys
+import hashlib, json, os, re, subprocess, sys
+
+def sha_check():
+    tool = None
+    for candidate in ("shasum", "sha256sum"):
+        probe = subprocess.run(["sh", "-c", "command -v " + candidate],
+                                capture_output=True)
+        if probe.returncode == 0:
+            tool = candidate
+            break
+    if tool is None:
+        print("REPRO FAIL: 0/0 no sha256 tool available")
+        sys.exit(1)
+    args = ["shasum", "-a", "256", "-c", "SHA256SUMS"] if tool == "shasum" \
+        else ["sha256sum", "-c", "SHA256SUMS"]
+    r = subprocess.run(args, capture_output=True, text=True)
+    if r.returncode != 0:
+        print(r.stdout + r.stderr)
+        print("REPRO FAIL: 0/0 SHA256SUMS mismatch")
+        sys.exit(1)
+
+sha_check()
+
 bad = 0
-for ln in open("SHA256SUMS"):
-    h, fn = ln.split()
-    d = hashlib.sha256(open(fn, "rb").read()).hexdigest()
-    if d != h:
-        print("SHA MISMATCH", fn); bad += 1
-rows = 0
+candidates = 0
+admitted = 0
+seen = set()
 for p in ("p1", "p2", "p3", "p4"):
-    for ln in open(f"rows/{p}.jsonl"):
-        r = json.loads(ln); rows += 1
-        if len(r["cites"]) < 2:
-            print("UNGROUNDED", r["eq_hash"]); bad += 1
-        if r["load_bearing"] and not (r.get("wire_back") and os.path.isfile(r["wire_back"])):
-            print("UNWIRED (wire_back missing or not shipped)", r["eq_hash"]); bad += 1
-        if not (r["refuted"]["attempted"] and r["refuted"]["survived"]):
-            print("UNREFUTED", r["eq_hash"]); bad += 1
-        if r["provenance"]["frontier_touched_raw"]:
-            print("DIRTY-HANDS", r["eq_hash"]); bad += 1
+    for ln in open("rows/%s.jsonl" % p):
+        if not ln.strip():
+            continue
+        r = json.loads(ln)
+        candidates += 1
+        ok = True
+        if len(r.get("cites", [])) < 2:
+            print("UNGROUNDED", r.get("eq_hash")); ok = False
+        wb = r.get("wire_back")
+        if r.get("load_bearing") and not wb:
+            print("UNWIRED", r.get("eq_hash")); ok = False
+        if wb and not os.path.isfile(wb):
+            print("DEAD-WIRE-BACK", r.get("eq_hash")); ok = False
+        ref = r.get("refuted") or {}
+        if not (ref.get("attempted") and ref.get("survived")):
+            print("UNREFUTED", r.get("eq_hash")); ok = False
+        if (r.get("provenance") or {}).get("frontier_touched_raw"):
+            print("DIRTY-HANDS", r.get("eq_hash")); ok = False
+        recomputed = hashlib.sha256(re.sub(r"\s+", " ", r.get("claim", "").lower()).encode()).hexdigest()[:16]
+        if recomputed != r.get("eq_hash"):
+            print("EQ-HASH-MISMATCH", r.get("eq_hash")); ok = False
+        if r.get("eq_hash") in seen:
+            print("DUPLICATE-EQ-HASH", r.get("eq_hash")); ok = False
+        else:
+            seen.add(r.get("eq_hash"))
+        if ok:
+            admitted += 1
+        else:
+            bad += 1
+
 adm = [json.loads(l) for l in open("rows/admission.jsonl") if l.strip()]
-if any(a["verdict"] != "ADMIT" for a in adm) or len(adm) < rows:
-    print("ADMISSION INCOMPLETE"); bad += 1
-print(f"REPRO {'PASS' if not bad else 'FAIL'}: rows={rows} admitted={len(adm)} defects={bad}")
-sys.exit(1 if bad else 0)
+if any(a.get("verdict") != "ADMIT" for a in adm) or len(adm) < candidates:
+    print("ADMISSION-INCOMPLETE")
+    bad += 1
+
+if bad:
+    print("REPRO FAIL: %d/%d rows admitted, %d defects" % (admitted, candidates, bad))
+    sys.exit(1)
+
+sel = subprocess.run(["sh", "guards/corpus-admission.sh", "--selftest"], capture_output=True, text=True)
+if sel.returncode != 0:
+    print(sel.stdout + sel.stderr)
+    print("REPRO FAIL: %d/%d rows admitted, guard selftest failed" % (admitted, candidates))
+    sys.exit(1)
+
+chk = subprocess.run(["sh", "guards/corpus-admission.sh", "."], capture_output=True, text=True)
+if chk.returncode != 0:
+    print(chk.stdout + chk.stderr)
+    print("REPRO FAIL: %d/%d rows admitted, guard check failed on this tree" % (admitted, candidates))
+    sys.exit(1)
+
+print("REPRO PASS: %d/%d rows admitted, %d defects" % (admitted, candidates, bad))
+print("ANCHOR: none-local. SHA256SUMS proves internal consistency only; the release timestamp is the external anchor.")
+sys.exit(0)
 PY
-# the shipped guard must prove its own teeth, then go GREEN on this tree
-sh guards/corpus-admission.sh --selftest
-sh guards/corpus-admission.sh .
-echo "ANCHOR: none-local — SHA256SUMS proves internal consistency only; verify against the published release timestamp"

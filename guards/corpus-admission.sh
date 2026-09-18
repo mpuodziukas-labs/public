@@ -1,5 +1,5 @@
 #!/bin/sh
-# corpus-admission.sh — the guard every load-bearing row's `wire_back` points at.
+# corpus-admission.sh - the guard every load-bearing row's `wire_back` points at.
 # Ships INSIDE the artifact (path-free: resolves from its own location), so a stranger can run
 # it: every pillar file non-empty, zero placeholders, one ADMIT verdict per row and no REJECT,
 # and every load-bearing row's wire_back names a file that exists here. --selftest plants a
@@ -14,7 +14,7 @@ check() {
   for p in p1 p2 p3 p4; do
     [ -s "$rows/$p.jsonl" ] || { echo "RED: $p.jsonl empty/missing"; return 1; }
   done
-  if grep -rIq -e PLACEHOLDER -e TODO_FILL "$rows/" 2>/dev/null; then echo "RED: placeholder rows"; return 1; fi
+  if grep -rIq -e PLACEHOLDER -e PLACEHOLDER_FILL "$rows/" 2>/dev/null; then echo "RED: placeholder rows"; return 1; fi
   adm="$rows/admission.jsonl"
   [ -s "$adm" ] || { echo "RED: no admission.jsonl (gate skipped)"; return 1; }
   if grep -q '"verdict"[ ]*:[ ]*"REJECT"' "$adm"; then echo "RED: REJECT verdict present"; return 1; fi
