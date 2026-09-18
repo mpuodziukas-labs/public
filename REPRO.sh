@@ -2,6 +2,23 @@
 # REPRO.sh - verify this artifact with nothing but sh + python3. No installs, no network.
 set -eu
 cd "$(dirname "$0")"
+
+# --selftest: a negative control with teeth. Plant a tampered row into a throwaway copy and prove
+# this verifier REJECTS it (a green that cannot go red is theater). Names the planted failure.
+if [ "${1:-}" = "--selftest" ]; then
+  d=$(mktemp -d) || { echo "SELFTEST FAIL: no tempdir"; exit 1; }
+  trap 'rm -rf "$d"' EXIT
+  cp -R . "$d/repo" 2>/dev/null || { echo "SELFTEST FAIL: copy"; exit 1; }
+  rm -rf "$d/repo/.git" 2>/dev/null || true
+  # plant: append a row whose sha now diverges from SHA256SUMS AND whose eq_hash cannot match its claim
+  printf '%s\n' '{"eq_hash":"deadbeefdeadbeef","pillar":"p4","claim":"planted tamper row","cites":["aa","bb"],"load_bearing":false,"refuted":{"attempted":true,"survived":true},"provenance":{"frontier_touched_raw":false}}' >> "$d/repo/rows/p4.jsonl"
+  if sh "$d/repo/REPRO.sh" >/dev/null 2>&1; then
+    echo "SELFTEST FAIL: planted tamper not caught (verifier is theater)"; exit 1
+  fi
+  echo "SELFTEST PASS: 1/1 planted failures caught -- a tampered row is rejected by REPRO"
+  exit 0
+fi
+
 python3 - <<'PY'
 import hashlib, json, os, re, subprocess, sys
 

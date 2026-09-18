@@ -1,19 +1,25 @@
 # backprop-corpus
 
+[![verify](https://github.com/mpuodziukas-labs/public/actions/workflows/verify.yml/badge.svg)](https://github.com/mpuodziukas-labs/public/actions/workflows/verify.yml)
+
+Benchmark: 12/12 admitted rows re-derive as grounded with 0 defects on a fresh clone -- `bash REPRO.sh` exits 0 only when every row re-admits and `SHA256SUMS` verifies.
+
 A knowledge row that cites text not in the source is a hallucination with a footnote; this
 corpus admits a row only when every claim's cited spans are verbatim in crawled chunks.
 
 - Deterministic: same input, same verdict, exit code contract.
 - Offline: no network, no dependencies, POSIX sh + bash only, nothing to install.
-- Self-proving: `bash REPRO.sh` re-derives every admission and checks SHA256SUMS; the guard's
-  `--selftest` must catch a planted rejected row and a planted dead wire-back (two negative controls).
+- Self-proving: `bash REPRO.sh` re-derives every admission and checks SHA256SUMS; `bash REPRO.sh --selftest`
+  plants a tampered row and proves the verifier rejects it; the guard's `--selftest` catches a planted
+  rejected row and a planted dead wire-back (three negative controls).
 
 ## Quickstart
 
 ```bash
-git clone https://github.com/mpuodziukas-labs/backprop-corpus
-cd backprop-corpus
+git clone https://github.com/mpuodziukas-labs/public
+cd public
 bash guards/corpus-admission.sh --selftest
+bash REPRO.sh --selftest
 bash REPRO.sh
 ```
 
